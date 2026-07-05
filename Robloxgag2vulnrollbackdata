@@ -1,0 +1,408 @@
+-- Gorgeous Rollback Controls (Fixed)
+-- Place in StarterPlayerScripts or StarterGui
+-- Edit the payload constants below to match server expectations.
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local REMOTE = game:GetService("ReplicatedStorage"):WaitForChild("SharedModules"):WaitForChild("Packet"):WaitForChild("RemoteEvent")
+local REMOTE_ID = 54
+
+local ROLLBACK_ON_PAYLOAD = ":\xF7"
+local ROLLBACK_OFF_PAYLOAD = ""
+local SEPARATE_BUTTON_PAYLOAD = ":\xF7"
+local CANCEL_ON_PAYLOAD = ":\xF7"
+local CANCEL_OFF_PAYLOAD = ""
+
+-- Utility: safe remote fire
+local function safeFire(id, payload)
+    local ok, err = pcall(function()
+        REMOTE:FireServer(id, payload)
+    end)
+    if not ok then
+        warn("Failed to fire RemoteEvent:", err)
+    end
+end
+
+local function create(className, props)
+    local inst = Instance.new(className)
+    if props then
+        for k, v in pairs(props) do
+            inst[k] = v
+        end
+    end
+    return inst
+end
+
+-- Remove old UI if present
+local existing = playerGui:FindFirstChild("RollbackControlsGorgeous")
+if existing then existing:Destroy() end
+
+-- Root ScreenGui
+local screenGui = create("ScreenGui", {
+    Name = "RollbackControlsGorgeous",
+    ResetOnSpawn = false,
+    DisplayOrder = 1000,
+    Parent = playerGui,
+})
+
+-- Container
+local container = create("Frame", {
+    Name = "Container",
+    Size = UDim2.new(0, 320, 0, 150),
+    Position = UDim2.new(0, 20, 0, 20),
+    BackgroundColor3 = Color3.fromRGB(20, 23, 28),
+    BorderSizePixel = 0,
+    Parent = screenGui,
+})
+create("UICorner", {CornerRadius = UDim.new(0, 14), Parent = container})
+create("UIStroke", {Color = Color3.fromRGB(40,40,45), Thickness = 1, Parent = container})
+
+-- Drop shadow
+local shadow = create("ImageLabel", {
+    Name = "Shadow",
+    Size = UDim2.new(1, 16, 1, 16),
+    Position = UDim2.new(0, -8, 0, -8),
+    BackgroundTransparency = 1,
+    Image = "rbxassetid://5052376760",
+    ImageColor3 = Color3.fromRGB(0,0,0),
+    ImageTransparency = 0.78,
+    ScaleType = Enum.ScaleType.Slice,
+    SliceCenter = Rect.new(10,10,118,118),
+    Parent = container,
+    ZIndex = 0,
+})
+shadow.ZIndex = 0
+container.ClipsDescendants = false
+
+create("UIGradient", {
+    Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(32,36,41)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(22,24,28)),
+    },
+    Rotation = 90,
+    Parent = container,
+})
+
+-- Title bar
+local titleBar = create("Frame", {
+    Name = "TitleBar",
+    Size = UDim2.new(1, 0, 0, 36),
+    Position = UDim2.new(0, 0, 0, 0),
+    BackgroundTransparency = 1,
+    Parent = container,
+})
+local titleLabel = create("TextLabel", {
+    Name = "Title",
+    Position = UDim2.new(0, 12, 0, 6),
+    Size = UDim2.new(1, -24, 1, -12),
+    BackgroundTransparency = 1,
+    Text = "Rollback Controls",
+    TextColor3 = Color3.fromRGB(235,235,240),
+    Font = Enum.Font.GothamBold,
+    TextSize = 16,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    Parent = titleBar,
+})
+
+-- Collapse button
+local collapseBtn = create("TextButton", {
+    Name = "Collapse",
+    Size = UDim2.new(0, 28, 0, 28),
+    Position = UDim2.new(1, -36, 0, 4),
+    BackgroundColor3 = Color3.fromRGB(40, 44, 51),
+    BorderSizePixel = 0,
+    Text = "—",
+    TextColor3 = Color3.fromRGB(200,200,200),
+    Font = Enum.Font.Gotham,
+    TextSize = 18,
+    Parent = titleBar,
+})
+create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = collapseBtn})
+create("UIStroke", {Color = Color3.fromRGB(55,60,68), Thickness = 1, Parent = collapseBtn})
+
+-- Content container (uses UIListLayout so rows don't overlap)
+local content = create("Frame", {
+    Name = "Content",
+    Size = UDim2.new(1, -24, 1, -56),
+    Position = UDim2.new(0, 12, 0, 44),
+    BackgroundTransparency = 1,
+    Parent = container,
+})
+local listLayout = create("UIListLayout", {
+    Parent = content,
+    SortOrder = Enum.SortOrder.LayoutOrder,
+    Padding = UDim.new(0, 10),
+})
+listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+
+-- Row factory helpers
+local function makeToggle(text, startEnabled)
+    local row = create("Frame", {
+        Size = UDim2.new(1, 0, 0, 44),
+        BackgroundTransparency = 1,
+        Parent = content,
+    })
+    row.LayoutOrder = 1
+
+    local label = create("TextLabel", {
+        Size = UDim2.new(0.62, 0, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Color3.fromRGB(220,220,225),
+        Font = Enum.Font.Gotham,
+        TextSize = 15,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        Parent = row,
+    })
+
+    local switchContainer = create("Frame", {
+        Name = "SwitchContainer",
+        Size = UDim2.new(0, 72, 0, 28),
+        Position = UDim2.new(1, -72, 0.5, -14),
+        BackgroundColor3 = Color3.fromRGB(62, 67, 75),
+        BorderSizePixel = 0,
+        Parent = row,
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 14), Parent = switchContainer})
+    create("UIStroke", {Color = Color3.fromRGB(45,50,56), Thickness = 1, Parent = switchContainer})
+
+    local inner = create("Frame", {
+        Name = "SwitchInner",
+        Size = UDim2.new(0, 28, 0, 28),
+        Position = startEnabled and UDim2.new(1, -30, 0, 0) or UDim2.new(0, 2, 0, 0),
+        BackgroundColor3 = startEnabled and Color3.fromRGB(90, 200, 170) or Color3.fromRGB(240,240,245),
+        BorderSizePixel = 0,
+        Parent = switchContainer,
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 14), Parent = inner})
+    create("UIStroke", {Color = Color3.fromRGB(36,40,44), Thickness = 1, Parent = inner})
+
+    local stateLabel = create("TextLabel", {
+        Name = "StateLabel",
+        Size = UDim2.new(1, -36, 1, 0),
+        Position = UDim2.new(0, 4, 0, 0),
+        BackgroundTransparency = 1,
+        Text = startEnabled and "ON" or "OFF",
+        TextColor3 = startEnabled and Color3.fromRGB(150,230,200) or Color3.fromRGB(160,165,170),
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        Parent = switchContainer,
+    })
+
+    -- Ensure clicking anywhere on this switch toggles it
+    local toggleArea = create("TextButton", {
+        Name = "ToggleArea",
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 1, 0),
+        Position = UDim2.new(0, 0, 0, 0),
+        Text = "",
+        Parent = switchContainer,
+    })
+
+    return {
+        Row = row,
+        Label = label,
+        SwitchContainer = switchContainer,
+        Inner = inner,
+        StateLabel = stateLabel,
+        ToggleArea = toggleArea,
+        Enabled = startEnabled,
+    }
+end
+
+local function makeActionButton(text)
+    local btn = create("TextButton", {
+        Size = UDim2.new(1, 0, 0, 44),
+        BackgroundColor3 = Color3.fromRGB(80, 120, 200),
+        BorderSizePixel = 0,
+        Text = text,
+        TextColor3 = Color3.fromRGB(245,245,250),
+        Font = Enum.Font.GothamBold,
+        TextSize = 15,
+        Parent = content,
+    })
+    create("UICorner", {CornerRadius = UDim.new(0, 10), Parent = btn})
+    create("UIStroke", {Color = Color3.fromRGB(60,90,160), Thickness = 1, Parent = btn})
+    btn.LayoutOrder = 2
+    return btn
+end
+
+-- Build UI
+local rollbackToggle = makeToggle("Rollback", false)
+local separateButton = makeActionButton("Separate")
+local cancelToggle = makeToggle("Cancel Rollback Data", false)
+
+-- Make sure list layout respects the content width (align rows)
+-- For consistent look, set explicit widths on the toggle rows' children if needed (we used anchors)
+
+-- Toggle animation function
+local function animateToggle(toggle, enabled)
+    local container = toggle.SwitchContainer
+    local inner = toggle.Inner
+    local stateLabel = toggle.StateLabel
+
+    local targetPos = enabled and UDim2.new(1, -30, 0, 0) or UDim2.new(0, 2, 0, 0)
+    local tInner = TweenService:Create(inner, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = targetPos,
+        BackgroundColor3 = enabled and Color3.fromRGB(90, 200, 170) or Color3.fromRGB(240,240,245),
+    })
+    tInner:Play()
+
+    TweenService:Create(stateLabel, TweenInfo.new(0.22), {
+        TextColor3 = enabled and Color3.fromRGB(150,230,200) or Color3.fromRGB(160,165,170),
+    }):Play()
+
+    TweenService:Create(container, TweenInfo.new(0.22), {
+        BackgroundColor3 = enabled and Color3.fromRGB(36, 45, 54) or Color3.fromRGB(62, 67, 75)
+    }):Play()
+
+    stateLabel.Text = enabled and "ON" or "OFF"
+end
+
+-- Button bounce
+local function buttonBounce(btn)
+    local orig = btn.BackgroundColor3
+    local darker = orig:Lerp(Color3.new(0,0,0), 0.08)
+    local t1 = TweenService:Create(btn, TweenInfo.new(0.08, Enum.EasingStyle.Quad), {BackgroundColor3 = darker})
+    local t2 = TweenService:Create(btn, TweenInfo.new(0.12, Enum.EasingStyle.Quad), {BackgroundColor3 = orig})
+    t1:Play()
+    t1.Completed:Wait()
+    t2:Play()
+end
+
+-- State variables & debounce
+local rollbackEnabled = false
+local cancelEnabled = false
+local actionDebounce = false
+
+-- Safe click handler wrapper
+local function doOnceAsync(fn)
+    if actionDebounce then return end
+    actionDebounce = true
+    local suc, err = pcall(fn)
+    if not suc then warn("Action error:", err) end
+    wait(0.22)
+    actionDebounce = false
+end
+
+-- Wire toggles
+local function wireToggle(toggleTable, onPayload, offPayload, stateRef)
+    local toggleArea = toggleTable.ToggleArea
+    toggleArea.MouseButton1Click:Connect(function()
+        doOnceAsync(function()
+            toggleTable.Enabled = not toggleTable.Enabled
+            if toggleTable == rollbackToggle then rollbackEnabled = toggleTable.Enabled end
+            if toggleTable == cancelToggle then cancelEnabled = toggleTable.Enabled end
+            animateToggle(toggleTable, toggleTable.Enabled)
+            if toggleTable.Enabled then
+                safeFire(REMOTE_ID, onPayload)
+            else
+                safeFire(REMOTE_ID, offPayload)
+            end
+        end)
+    end)
+end
+
+wireToggle(rollbackToggle, ROLLBACK_ON_PAYLOAD, ROLLBACK_OFF_PAYLOAD, "rollbackEnabled")
+wireToggle(cancelToggle, CANCEL_ON_PAYLOAD, CANCEL_OFF_PAYLOAD, "cancelEnabled")
+
+-- Separate button
+separateButton.MouseButton1Click:Connect(function()
+    doOnceAsync(function()
+        buttonBounce(separateButton)
+        safeFire(REMOTE_ID, SEPARATE_BUTTON_PAYLOAD)
+    end)
+end)
+separateButton.MouseEnter:Connect(function()
+    TweenService:Create(separateButton, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(95,135,230)}):Play()
+end)
+separateButton.MouseLeave:Connect(function()
+    TweenService:Create(separateButton, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(80,120,200)}):Play()
+end)
+
+-- Collapse behavior
+local collapsed = false
+local originalSize = container.Size
+collapseBtn.MouseButton1Click:Connect(function()
+    collapsed = not collapsed
+    if collapsed then
+        -- animate to small header size and hide content after tween
+        TweenService:Create(container, TweenInfo.new(0.22, Enum.EasingStyle.Quad), {Size = UDim2.new(originalSize.X.Scale, originalSize.X.Offset, 0, 40)}):Play()
+        -- hide content after short delay so the collapse looks clean
+        delay(0.18, function() content.Visible = false end)
+        titleLabel.Text = "Rollback Controls (collapsed)"
+    else
+        content.Visible = true
+        TweenService:Create(container, TweenInfo.new(0.22, Enum.EasingStyle.Quad), {Size = originalSize}):Play()
+        titleLabel.Text = "Rollback Controls"
+    end
+end)
+
+-- Dragging support (robust)
+do
+    local dragging = false
+    local dragInput = nil
+    local dragStart = Vector2.new()
+    local startPos = container.Position
+
+    local function update(inputPos)
+        local delta = inputPos - dragStart
+        local newX = startPos.X.Offset + delta.X
+        local newY = startPos.Y.Offset + delta.Y
+        container.Position = UDim2.new(startPos.X.Scale, newX, startPos.Y.Scale, newY)
+    end
+
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragInput = input
+            dragStart = input.Position
+            startPos = container.Position
+        end
+    end)
+
+    titleBar.InputEnded:Connect(function(input)
+        if input == dragInput then
+            dragging = false
+            dragInput = nil
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and input == dragInput and input.Position then
+            update(input.Position)
+        end
+    end)
+
+    -- Fallback: if the input doesn't generate InputChanged events (very rare), also update on RenderStepped
+    RunService.RenderStepped:Connect(function()
+        if dragging and dragInput and dragInput.Position then
+            update(dragInput.Position)
+        end
+    end)
+end
+
+-- Entrance animation: slide up from 12px offset
+do
+    local startPos = container.Position
+    local offsetPos = UDim2.new(startPos.X.Scale, startPos.X.Offset, startPos.Y.Scale, startPos.Y.Offset + 12)
+    container.Position = offsetPos
+    container.BackgroundTransparency = 1
+    -- fade in background
+    TweenService:Create(container, TweenInfo.new(0.36, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+    -- slide to original
+    TweenService:Create(container, TweenInfo.new(0.36, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Position = startPos}):Play()
+end
+
+-- Ensure content visibility consistent at start
+content.Visible = true
+
+-- End of script
