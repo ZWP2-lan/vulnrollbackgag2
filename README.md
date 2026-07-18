@@ -84,7 +84,7 @@ local S = {
 }
 
 -- settings persistence: save S to disk, restore it on next load (toggles, sliders, picks)
-local SAVE_FILE = "360_GAG_GrowAGarden2.json"
+local SAVE_FILE = "NEPXONE_HUB_GrowAGarden2.json"
 local HttpService = game:GetService("HttpService")
 local function saveSettings()
     if not writefile then return end
@@ -371,7 +371,7 @@ local function guiParent()
     if not p then pcall(function() p = game:GetService("CoreGui") end) end
     return p or (LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui"))
 end
-pcall(function() local old = guiParent():FindFirstChild("GAG360") if old then old:Destroy() end end)
+pcall(function() local old = guiParent():FindFirstChild("NEPXONE HUB") if old then old:Destroy() end end)
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "NEPXONE-HUB"; ScreenGui.ResetOnSpawn = false
@@ -1896,4 +1896,4 @@ selectTab("Farm")
 TweenService:Create(UIScale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = uiScaleVal }):Play()
 notify("Loaded successfully - on mobile the menu is scaled to fit. Toggle with Right Shift.", "360's GAG", C.accent)
 setStatus("loaded - Right Shift to toggle")
-print("[360's GAG] loaded.")
+print("[NEPXONE-HUB] loaded.")
