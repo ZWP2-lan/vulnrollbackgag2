@@ -84,7 +84,7 @@ local S = {
 }
 
 -- settings persistence: save S to disk, restore it on next load (toggles, sliders, picks)
-local SAVE_FILE = "NEPXONE_HUB_GrowAGarden2.json"
+local SAVE_FILE = "360_GAG_GrowAGarden2.json"
 local HttpService = game:GetService("HttpService")
 local function saveSettings()
     if not writefile then return end
@@ -371,7 +371,7 @@ local function guiParent()
     if not p then pcall(function() p = game:GetService("CoreGui") end) end
     return p or (LocalPlayer:FindFirstChild("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui"))
 end
-pcall(function() local old = guiParent():FindFirstChild("NEPXONE HUB") if old then old:Destroy() end end)
+pcall(function() local old = guiParent():FindFirstChild("360 GAG") if old then old:Destroy() end end)
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "NEPXONE-HUB"; ScreenGui.ResetOnSpawn = false
