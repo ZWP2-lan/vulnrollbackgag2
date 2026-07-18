@@ -1857,8 +1857,8 @@ end
 selectTab("Farm")
 -- subtle open animation
 -- whole hub scales as one unit (UIScale) so text, boxes & descriptions stay in proportion
-local UI_SCALE = 0.23
-UIScale.Scale = 0.32
+local UI_SCALE = 0.120
+UIScale.Scale = 0.89
 TweenService:Create(UIScale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = UI_SCALE }):Play()
 notify("Loaded successfully - press Right Shift to toggle the menu.", "NEPXONE HUB's GAG", C.accent)
 setStatus("loaded - Right Shift to toggle")
