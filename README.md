@@ -1,6 +1,6 @@
 --[[
 =====================================================================
-   360's GAG   -   Grow a Garden 2 hub (mobile-friendly)
+   NEPXONE-HUB by BUILDERPH  -   Grow a Garden 2 hub (mobile-friendly)
    Axon-style two-column UI, ruby-red accents.
    Right Shift toggles UI.  The X fully unloads.
    Adjusted: responsive sizing & PlayerGui parent for mobile so all tabs/buttons show.
@@ -20,7 +20,7 @@ local LocalPlayer      = Players.LocalPlayer
 --========================== GAME API ==============================--
 local Net = (function() local ok,m = pcall(function() return require(ReplicatedStorage.SharedModules.Networking) end) return ok and m or nil end)()
 local PSC = (function() local ok,m = pcall(function() return require(ReplicatedStorage.ClientModules.PlayerStateClient) end) return ok and m or nil end)()
-if not Net then warn("[360's GAG] Networking module missing - aborting."); return end
+if not Net then warn("[NEPXONE HUB] Networking module missing - aborting."); return end
 
 local SeedData = (function() local ok,d = pcall(function() return require(ReplicatedStorage.SharedModules.SeedData) end) return ok and d or {} end)()
 local SeedPrice = {}
@@ -860,8 +860,8 @@ function Hub.unload()
     pcall(function() ScreenGui:Destroy() end)
     print("[NEPXONE-HUB] unloaded.")
 end
-genv.GAG360_unload = Hub.unload
-genv.GAG360_notify = function(msg, title, col) notify(msg, title, col) end  -- external trigger for the toast
+genv.NEPXONE HUB_unload = Hub.unload
+genv.NEPXONE_notify = function(msg, title, col) notify(msg, title, col) end  -- external trigger for the toast
 track(CloseBtn.MouseButton1Click:Connect(function() Hub.unload() end))
 track(UserInputService.InputBegan:Connect(function(i, gpe) if not gpe and i.KeyCode == Enum.KeyCode.RightShift then Main.Visible = not Main.Visible end end))
 
