@@ -1,6 +1,6 @@
 --[[
 =====================================================================
-   360's GAG   -   Grow a Garden 2 hub
+   NEPXONE-HUB's GAG   -   Grow a Garden 2 hub
    Axon-style two-column UI, ruby-red accents.
    Right Shift toggles UI.  The X fully unloads.
 =====================================================================
@@ -19,7 +19,7 @@ local LocalPlayer      = Players.LocalPlayer
 --========================== GAME API ==============================--
 local Net = (function() local ok,m = pcall(function() return require(ReplicatedStorage.SharedModules.Networking) end) return ok and m or nil end)()
 local PSC = (function() local ok,m = pcall(function() return require(ReplicatedStorage.ClientModules.PlayerStateClient) end) return ok and m or nil end)()
-if not Net then warn("[360's GAG] Networking module missing - aborting."); return end
+if not Net then warn("[NEPXONE-HUB's GAG] Networking module missing - aborting."); return end
 
 local SeedData = (function() local ok,d = pcall(function() return require(ReplicatedStorage.SharedModules.SeedData) end) return ok and d or {} end)()
 local SeedPrice = {}
@@ -66,10 +66,10 @@ end
 --========================== STATE =================================--
 local S = {
     autoBuySeed = false, buySeeds = {},
-    autoPlant = false, plantSeeds = {}, plantReserve = 0, maxPerCycle = 40, plantDelay = 0.14, plantLoop = 1.2, smartReplant = false, autoExpand = false,
+    autoPlant = false, plantSeeds = {}, plantReserve = 0, maxPerCycle = 400000, plantDelay = 0.0000001, plantLoop = 0.01, smartReplant = false, autoExpand = false,
     plantPattern = "Fill", plantSource = "My Seeds", autoBuild = false, removeCrops = {},
-    autoCollect = false, harvestCrops = {}, harvestMutsOnly = false, perFruitDelay = 0.05, harvestLoop = 1,
-    autoSell = false, sellInterval = 20, sellOnFull = false,
+    autoCollect = false, harvestCrops = {}, harvestMutsOnly = false, perFruitDelay = 0.00000001, harvestLoop = 0,
+    autoSell = false, sellInterval = 0.01, sellOnFull = false,
     autoSteal = false, stealReturn = true, stealMult = 1,
     panicHarvest = false, retaliate = false,
     autoGrabPacks = false, grabRareOnly = true, packReturn = true, notifyRare = true,
@@ -366,7 +366,7 @@ end
 pcall(function() local old = guiParent():FindFirstChild("GAG360") if old then old:Destroy() end end)
 
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GAG360"; ScreenGui.ResetOnSpawn = false
+ScreenGui.Name = "NEPXONE HUB BY BUILDER PHP"; ScreenGui.ResetOnSpawn = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling; ScreenGui.IgnoreGuiInset = true
 if syn and syn.protect_gui then pcall(syn.protect_gui, ScreenGui) end
 ScreenGui.Parent = guiParent()
@@ -1579,16 +1579,16 @@ do
     subTitle(L, "Timing")
     sliderRow(L, "Keep In Reserve (per seed)", 0, 25, S.plantReserve, 0, function(v) S.plantReserve = v end)
     sliderRow(L, "Max Plants / Cycle", 1, 80, S.maxPerCycle, 0, function(v) S.maxPerCycle = v end)
-    sliderRow(L, "Plant Delay", 0.05, 1, S.plantDelay, 2, function(v) S.plantDelay = v end)
-    sliderRow(L, "Loop Delay", 0.5, 10, S.plantLoop, 1, function(v) S.plantLoop = v end)
+    sliderRow(L, "Plant Delay", 0.0000001, 0.01, S.plantDelay, 2, function(v) S.plantDelay = v end)
+    sliderRow(L, "Loop Delay", 0.00000001, 0.01, S.plantLoop, 1, function(v) S.plantLoop = v end)
     -- Harvest
     colTitle(R, "Harvest"); subTitle(R, "Auto Harvest")
     howItWorks(R, "Collects grown fruit on your plot by firing CollectFruit for each. Use the filters below to only pick up certain crops or mutations.")
     toggleRow(R, "Auto Harvest", "Collects all ready fruit on your plot on a loop.", "autoCollect")
     dropdownRow(R, "Only These Crops", "Empty = harvest every crop type.", getHarvestOptions, S.harvestCrops, nil, nil)
     toggleRow(R, "Only Harvest Mutated Fruit", "Skips any fruit that has no mutation.", "harvestMutsOnly")
-    sliderRow(R, "Per-Fruit Delay", 0.02, 0.5, S.perFruitDelay, 2, function(v) S.perFruitDelay = v end)
-    sliderRow(R, "Loop Delay", 0.5, 10, S.harvestLoop, 1, function(v) S.harvestLoop = v end)
+    sliderRow(R, "Per-Fruit Delay", 0.000001, 0.0000000001, S.perFruitDelay, 2, function(v) S.perFruitDelay = v end)
+    sliderRow(R, "Loop Delay", 0.00000000001, 0.0000001, S.harvestLoop, 100000000000000000000, function(v) S.harvestLoop = v end)
     actionRow(R, "Harvest Now", "Collect every ready fruit immediately.", function()
         setStatus("harvested " .. harvestAll(false))
     end)
@@ -1857,9 +1857,9 @@ end
 selectTab("Farm")
 -- subtle open animation
 -- whole hub scales as one unit (UIScale) so text, boxes & descriptions stay in proportion
-local UI_SCALE = 0.88
-UIScale.Scale = 0.74
+local UI_SCALE = 0.23
+UIScale.Scale = 0.32
 TweenService:Create(UIScale, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.Out), { Scale = UI_SCALE }):Play()
-notify("Loaded successfully - press Right Shift to toggle the menu.", "360's GAG", C.accent)
+notify("Loaded successfully - press Right Shift to toggle the menu.", "NEPXONE HUB's GAG", C.accent)
 setStatus("loaded - Right Shift to toggle")
-print("[360's GAG] loaded.")
+print("[NEPXONE HUB's GAG] loaded.")
